@@ -1,56 +1,3 @@
-
-#%%
-from build123d import *
-from ocp_vscode import *
-import math
-
-edge_length = 15
-x_offset = 0
-height = 150
-width = 800
-n_col = 10
-n_row = 10
-edge_width = 4*width/(10*n_col + 3)
-edge_height = 4*height/(10*n_row + 3)
-
-
-def create_quarter_spiral(edge_width, edge_height, label="quarter_spiral"):
-    a = Line((0,0),(edge_width,0))
-    b = Line((edge_width,0), (edge_width, edge_height))
-    c = Line((edge_width,edge_height), (edge_width/2, edge_height))
-    d = Line((edge_width/2, edge_height), (edge_width/2, edge_height/2))
-
-    return Compound(label=label, children=[a,b,c,d])
-
-def create_spiral(edge_width, edge_height, label="spiral"):
-    a = create_quarter_spiral(edge_width, edge_height)
-    b = Rot(Z=90)*create_quarter_spiral(edge_height, edge_width)
-    c = Rot(Z=180)*create_quarter_spiral(edge_width, edge_height)
-    d = Rot(Z=270)*create_quarter_spiral(edge_height, edge_width)
-    return Compound(label=label, children=[a,b,c,d])
-
-
-def create_array(width, height, n_col, n_row, label="swag"):
-    edge_width = 4*width/(10*n_col + 3)
-    edge_height = 4*height/(10*n_row + 3)
-    fabric=[]
-    for i in range (n_col):
-        for j in range(n_row):
-            fabric+= Pos(i*(5*edge_width/2), j*(5* edge_height/2) )*create_spiral(edge_width, edge_height,label="spiral")
-            fabric+= Pos(5*edge_width/4+ i*(5*edge_width/2), 5*edge_height/4+ j*(5*edge_height/2))*create_spiral(edge_width, edge_height, label="spiral")
-    r= Rectangle(width, height, align=(Align.MIN, Align.MIN))
-    return Pos(edge_width, edge_height)*Compound(label=label, children=fabric), r
-
-
-
-
-#f = create_array(edge_length, n_col, n_row, label="swog")
-f2, r2 = create_array(width, height, n_col, n_row)
-show(f2, r2)
-
-
-
-
 # %%
 from build123d import *
 from ocp_vscode import *
@@ -131,6 +78,16 @@ def generate_control_points(n, x_max, y_max, y_min):
 
     return control_points
 
+def create_profile(n, x_max, y_min, y_max, length, circle_radius, circle_heigth, plot=False):
+    control_points = generate_control_points(n, x_max, y_max, y_min)
+    optimized_control_points, length = optimize_spline_length(control_points, length, plot=plot)
+    l1 = Spline(*optimized_control_points)
+    l1 += Line(optimized_control_points[n-1], (x_max, 0))
+    l1 += mirror(l1, Plane.XZ)
+    f = make_face(l1)
+    c = Pos(X=circle_heigth)*Circle(circle_radius)
+    return f-c
+
 def create_quarter_spiral(edge_width, edge_height, label="quarter_spiral"):
     a = Line((0,0),(edge_width,0))
     b = Line((edge_width,0), (edge_width, edge_height))
@@ -146,7 +103,6 @@ def create_spiral(edge_width, edge_height, label="spiral"):
     d = Rot(Z=270)*create_quarter_spiral(edge_height, edge_width)
     return Compound(label=label, children=[a,b,c,d])
 
-
 def create_array(width, height, n_col, n_row, label="swag"):
     edge_width = 4*width/(10*n_col + 3)
     edge_height = 4*height/(10*n_row + 3)
@@ -157,50 +113,43 @@ def create_array(width, height, n_col, n_row, label="swag"):
             fabric+= Pos(5*edge_width/4+ i*(5*edge_width/2), 5*edge_height/4+ j*(5*edge_height/2))*create_spiral(edge_width, edge_height, label="spiral")
     r= Rectangle(width, height, align=(Align.MIN, Align.MIN))
     return Pos(edge_width, edge_height)*Compound(label=label, children=fabric), r
-# Example usage
-n = 5  # Number of control points
-x_max = 10  # Maximum x value
-y_max = 2  # y value for all points except the last
-y_min = 1
-
-length = 7
-
-def create_face(n, x_max, y_min, y_max, length, circle_radius, circle_heigth, plot=False):
-    control_points = generate_control_points(n, x_max, y_max, y_min)
-    optimized_control_points, length = optimize_spline_length(control_points, length, plot=plot)
-    print(length)
-    l1 = Spline(*optimized_control_points)
-    l1 += Line(optimized_control_points[n-1], (x_max, 0))
-    l1 += mirror(l1, Plane.XZ)
-    f = make_face(l1)
-    c = Pos(X=circle_height)*Circle(circle_radius)
-    return f-c
 
 
-
-
-bag_heigth = 10  # Maximum x value
-bag_width = 2  # y value for all points except the last
+bag_heigth = 50  # Maximum x value
+bag_width = 10  # y value for all points except the last
 bag_length = 20
-min_width = 0.5
-min_cut_border=1
-circle_radius = 0.5
-circle_height = 9
-profile_length = 12
+min_width = 2.5
+min_cut_border=5
+circle_radius = 2.5
+circle_height = 45
+profile_length = 70
+n = 5 
+n_col = 10
+n_row = 15
 
-f = create_face(n, bag_heigth, min_width ,bag_width, profile_length, circle_radius, circle_height,plot=False)
-show(f)
+p1 = create_profile(n, bag_heigth, min_width ,bag_width, profile_length, circle_radius, circle_height,plot=False)
+p2 = Pos(Z = 3*bag_length)*create_profile(n, bag_heigth, min_width ,bag_width, profile_length, circle_radius, circle_height,plot=False)
 
 
+p1 = create_profile(n, bag_heigth, min_width ,bag_width, profile_length, circle_radius, circle_height,plot=False)
+p2 = Pos(Y = 3*bag_width)*create_profile(n, bag_heigth, min_width ,bag_width, profile_length, circle_radius, circle_height,plot=False)
+
+f1, r1 = create_array(bag_length, profile_length, n_col, n_row, label="swag")
+f1 = Pos(Y = 6*bag_width)*f1
+r1 = Pos(Y = 6*bag_width)*r1
+
+f2, r2 = create_array(bag_length, profile_length, n_col, n_row, label="swag")
+f2 = Pos(Y = 6*bag_width + profile_length + profile_length/10)*f2
+r2 = Pos(Y = 6*bag_width + profile_length + profile_length/10)*r2
 
 
-"""
-exporter = ExportSVG(unit=Unit.MM, line_weight=0.5)
-exporter.add_layer("Layer 1", fill_color=(255, 0, 0), line_color=(0, 0, 255))
-exporter.add_shape(f, layer="Layer 1")
-exporter.add_layer("Layer 2", fill_color=(0, 255, 0), line_color=(0, 255, 0))
-exporter.add_shape(f2, layer="Layer 2")
-exporter.write("pattern_e_15.svg")
-"""
+exporter = ExportSVG(unit=Unit.MM, line_weight=5)
+exporter.add_layer("Layer 1", fill_color=None, line_color=(0, 0, 255))
+exporter.add_shape([r1,r2], layer="Layer 1")
+exporter.add_layer("Layer 2", fill_color=None, line_color=(0, 255, 0))
+exporter.add_shape([p1, p2, f1,f2], layer="Layer 2")
+exporter.write("./bag2.svg")
 
-# %%
+show(p1, p2, f1, f2, r1, r2)
+
+

@@ -15,7 +15,6 @@ rows = 3
 columns=5
 
 
-
 # Projects point along vector defined by angle & distance.
 def proj(coord, alpha, k):
     return (coord[0] + k * math.cos(math.radians(alpha)), coord[1] + k * math.sin(math.radians(alpha)))
@@ -63,28 +62,26 @@ def create_hexagon(edge_length, t, theta, hinge_length, gap):
             h+= Rot(Z=a)*create_triangle(edge_length, t, theta, hinge_length, gap)
         i+=1
     return Compound(label="hex", children=h)
-
+"""
 hex = create_hexagon(edge_length, t, theta, hinge_length, gap)
 hex2 = Pos(Y=math.sqrt(3)*edge_length)*create_hexagon(edge_length, t, theta, hinge_length, gap)
-show(hex, hex2)
+hex3 = Pos((3/2)*edge_length, (math.sqrt(3)/2)*edge_length)*create_hexagon(edge_length, t, theta, hinge_length, gap)
+
+show(hex, hex2, hex3)
+"""
+h=[]
+for i in range (3):
+    for j in range(3):
+        if j%2 == 0:
+            h += Pos(j*(3/2)*edge_length, i*math.sqrt(3)*edge_length)*create_hexagon(edge_length, t, theta, hinge_length, gap)
+        else:
+            h += Pos(j*(3/2)*edge_length, i*math.sqrt(3)*edge_length + (math.sqrt(3)/2)*edge_length)*create_hexagon(edge_length, t, theta, hinge_length, gap)
+show_object(h, options={"color": (255, 0, 0)})
 
 
-a = edge_length*math.sin(math.radians(60))*2
-b = edge_length*1.5
-c = a
 
 
-def bistable_auxetic(edge_length, t, theta, hinge_length, gap, rows, columns):
-    ba = []
-    vertical_dist = edge_length*math.sin(math.radians(60))*2
-    for i in range(0, rows-1):
-        for j in range (0,columns-1):
-            ba += Pos(edge_length*j*1.5, vertical_dist*(i+(j%2)*.5), 0)*hexagon(edge_length, t, theta, hinge_length, gap)
-            show(ba)
-            break
-    return ba
 
-show(bistable_auxetic(edge_length, t, theta, hinge_length, gap, rows, columns))
 
 
    
